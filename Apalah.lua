@@ -1,12 +1,15 @@
--- Roblox GUI FPS/Noclip/Fly by Yongky
+-- Roblox GUI by Yongky (Fix Fly/Noclip)
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- State flags
 local flying = false
 local noclip = false
 local flySpeed = 5
+local UIS = game:GetService("UserInputService")
 
--- GUI Setup
+-- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 220, 0, 200)
@@ -18,7 +21,7 @@ frame.Draggable = true
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 40)
-title.Text = "Yongky FPS Tools"
+title.Text = "Yongky Panel"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 title.Font = Enum.Font.SourceSansBold
@@ -29,7 +32,7 @@ layout.Padding = UDim.new(0, 8)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.VerticalAlignment = Enum.VerticalAlignment.Center
 
-local function createBtn(text, callback)
+local function createBtn(text, func)
     local btn = Instance.new("TextButton", frame)
     btn.Size = UDim2.new(0.9, 0, 0, 35)
     btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
@@ -37,7 +40,9 @@ local function createBtn(text, callback)
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 18
     btn.Text = text
-    btn.MouseButton1Click:Connect(callback)
+    btn.MouseButton1Click:Connect(function()
+        func(btn)
+    end)
     return btn
 end
 
@@ -57,58 +62,63 @@ createBtn("Boost FPS", function()
     end
 end)
 
--- Noclip Toggle
+-- Noclip
 createBtn("Noclip [OFF]", function(btn)
     noclip = not noclip
-    btn.Text = "Noclip ["..(noclip and "ON" or "OFF").."]"
+    btn.Text = "Noclip [" .. (noclip and "ON" or "OFF") .. "]"
 end)
 
 game:GetService("RunService").Stepped:Connect(function()
-    if noclip and plr.Character then
-        for _, part in pairs(plr.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+    if noclip then
+        local character = plr.Character
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end
     end
 end)
 
--- Fly Toggle
+-- Fly
 createBtn("Fly [OFF]", function(btn)
     flying = not flying
-    btn.Text = "Fly ["..(flying and "ON" or "OFF").."]"
+    btn.Text = "Fly [" .. (flying and "ON" or "OFF") .. "]"
 
     if flying then
         local bv = Instance.new("BodyVelocity", hrp)
         bv.Name = "FlyVelocity"
-        bv.Velocity = Vector3.new()
         bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bv.Velocity = Vector3.zero
 
-        local input = game:GetService("UserInputService")
-        local flyDir = Vector3.new()
+        local direction = Vector3.zero
 
-        local con1 = input.InputBegan:Connect(function(i)
-            if i.KeyCode == Enum.KeyCode.W then flyDir = Vector3.new(0, 0, -1)
-            elseif i.KeyCode == Enum.KeyCode.S then flyDir = Vector3.new(0, 0, 1)
-            elseif i.KeyCode == Enum.KeyCode.A then flyDir = Vector3.new(-1, 0, 0)
-            elseif i.KeyCode == Enum.KeyCode.D then flyDir = Vector3.new(1, 0, 0)
-            elseif i.KeyCode == Enum.KeyCode.Space then flyDir = Vector3.new(0, 1, 0)
-            elseif i.KeyCode == Enum.KeyCode.LeftControl then flyDir = Vector3.new(0, -1, 0)
+        local input = UIS.InputBegan:Connect(function(inputObj)
+            if inputObj.UserInputType == Enum.UserInputType.Keyboard then
+                local key = inputObj.KeyCode
+                if key == Enum.KeyCode.W then direction = Vector3.new(0, 0, -1)
+                elseif key == Enum.KeyCode.S then direction = Vector3.new(0, 0, 1)
+                elseif key == Enum.KeyCode.A then direction = Vector3.new(-1, 0, 0)
+                elseif key == Enum.KeyCode.D then direction = Vector3.new(1, 0, 0)
+                elseif key == Enum.KeyCode.Space then direction = Vector3.new(0, 1, 0)
+                elseif key == Enum.KeyCode.LeftControl then direction = Vector3.new(0, -1, 0)
+                end
             end
         end)
 
-        local con2 = input.InputEnded:Connect(function()
-            flyDir = Vector3.new()
+        local inputEnd = UIS.InputEnded:Connect(function()
+            direction = Vector3.zero
         end)
 
-        spawn(function()
+        task.spawn(function()
             while flying and bv.Parent do
-                bv.Velocity = (plr.Character.HumanoidRootPart.CFrame:VectorToWorldSpace(flyDir)) * flySpeed
-                wait()
+                bv.Velocity = hrp.CFrame:VectorToWorldSpace(direction) * flySpeed
+                task.wait()
             end
             bv:Destroy()
-            con1:Disconnect()
-            con2:Disconnect()
+            input:Disconnect()
+            inputEnd:Disconnect()
         end)
     end
 end)
