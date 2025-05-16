@@ -1,13 +1,23 @@
--- Roblox GUI by Yongky (Fix Fly/Noclip)
+-- Roblox GUI by Yongky (Fly/Noclip/FPS FIXED)
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
 
 -- State flags
 local flying = false
 local noclip = false
-local flySpeed = 5
-local UIS = game:GetService("UserInputService")
+local flySpeed = 60
+local flyVelocity
+local inputDir = {
+    forward = false,
+    back = false,
+    left = false,
+    right = false,
+    up = false,
+    down = false
+}
 
 -- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
@@ -68,7 +78,7 @@ createBtn("Noclip [OFF]", function(btn)
     btn.Text = "Noclip [" .. (noclip and "ON" or "OFF") .. "]"
 end)
 
-game:GetService("RunService").Stepped:Connect(function()
+RS.Stepped:Connect(function()
     if noclip then
         local character = plr.Character
         if character then
@@ -81,44 +91,70 @@ game:GetService("RunService").Stepped:Connect(function()
     end
 end)
 
--- Fly
+-- Fly system
+local function updateDirection()
+    local dir = Vector3.zero
+    if inputDir.forward then dir += Vector3.new(0, 0, -1) end
+    if inputDir.back then dir += Vector3.new(0, 0, 1) end
+    if inputDir.left then dir += Vector3.new(-1, 0, 0) end
+    if inputDir.right then dir += Vector3.new(1, 0, 0) end
+    if inputDir.up then dir += Vector3.new(0, 1, 0) end
+    if inputDir.down then dir += Vector3.new(0, -1, 0) end
+    return dir.Magnitude > 0 and dir.Unit or Vector3.zero
+end
+
+local function startFly()
+    if flying then return end
+    flying = true
+
+    flyVelocity = Instance.new("BodyVelocity", hrp)
+    flyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    flyVelocity.P = 1e4
+    flyVelocity.Velocity = Vector3.zero
+
+    RS:BindToRenderStep("FlyMove", Enum.RenderPriority.Character.Value + 1, function()
+        local dir = updateDirection()
+        flyVelocity.Velocity = hrp.CFrame:VectorToWorldSpace(dir) * flySpeed
+    end)
+end
+
+local function stopFly()
+    flying = false
+    RS:UnbindFromRenderStep("FlyMove")
+    if flyVelocity then flyVelocity:Destroy() flyVelocity = nil end
+end
+
+-- Fly button
 createBtn("Fly [OFF]", function(btn)
-    flying = not flying
-    btn.Text = "Fly [" .. (flying and "ON" or "OFF") .. "]"
-
     if flying then
-        local bv = Instance.new("BodyVelocity", hrp)
-        bv.Name = "FlyVelocity"
-        bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-        bv.Velocity = Vector3.zero
+        stopFly()
+        btn.Text = "Fly [OFF]"
+    else
+        startFly()
+        btn.Text = "Fly [ON]"
+    end
+end)
 
-        local direction = Vector3.zero
+-- Input keys
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    local kc = input.KeyCode
+    if kc == Enum.KeyCode.W then inputDir.forward = true
+    elseif kc == Enum.KeyCode.S then inputDir.back = true
+    elseif kc == Enum.KeyCode.A then inputDir.left = true
+    elseif kc == Enum.KeyCode.D then inputDir.right = true
+    elseif kc == Enum.KeyCode.Space then inputDir.up = true
+    elseif kc == Enum.KeyCode.LeftControl then inputDir.down = true
+    end
+end)
 
-        local input = UIS.InputBegan:Connect(function(inputObj)
-            if inputObj.UserInputType == Enum.UserInputType.Keyboard then
-                local key = inputObj.KeyCode
-                if key == Enum.KeyCode.W then direction = Vector3.new(0, 0, -1)
-                elseif key == Enum.KeyCode.S then direction = Vector3.new(0, 0, 1)
-                elseif key == Enum.KeyCode.A then direction = Vector3.new(-1, 0, 0)
-                elseif key == Enum.KeyCode.D then direction = Vector3.new(1, 0, 0)
-                elseif key == Enum.KeyCode.Space then direction = Vector3.new(0, 1, 0)
-                elseif key == Enum.KeyCode.LeftControl then direction = Vector3.new(0, -1, 0)
-                end
-            end
-        end)
-
-        local inputEnd = UIS.InputEnded:Connect(function()
-            direction = Vector3.zero
-        end)
-
-        task.spawn(function()
-            while flying and bv.Parent do
-                bv.Velocity = hrp.CFrame:VectorToWorldSpace(direction) * flySpeed
-                task.wait()
-            end
-            bv:Destroy()
-            input:Disconnect()
-            inputEnd:Disconnect()
-        end)
+UIS.InputEnded:Connect(function(input)
+    local kc = input.KeyCode
+    if kc == Enum.KeyCode.W then inputDir.forward = false
+    elseif kc == Enum.KeyCode.S then inputDir.back = false
+    elseif kc == Enum.KeyCode.A then inputDir.left = false
+    elseif kc == Enum.KeyCode.D then inputDir.right = false
+    elseif kc == Enum.KeyCode.Space then inputDir.up = false
+    elseif kc == Enum.KeyCode.LeftControl then inputDir.down = false
     end
 end)
