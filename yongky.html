@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yongky Programer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      color: white;
+      text-align: center;
+      padding-top: 100px;
+      margin: 0;
+    }
+
+    #content {
+      display: none;
+      margin-top: 30px;
+    }
+
+    #continueBtn {
+      background-color: white;
+      color: #007acc;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #continueBtn:hover {
+      background-color: #e0e0e0;
+    }
+
+    a.whatsapp-link {
+      display: inline-block;
+      margin-top: 15px;
+      color: #fff;
+      background-color: #25D366;
+      padding: 10px 20px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    a.whatsapp-link:hover {
+      background-color: #1ebc57;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <h1>Selamat Datang di Web Yongky Programer</h1>
+  <p>Website ini dibuat untuk GABUT saja😂.</p>
+
+  <button id="continueBtn" onclick="showContent()">Continue</button>
+
+  <div id="content">
+    <h2>Jasa yang Tersedia:</h2>
+    <p>Yongky menyediakan jasa membuat bot dan script dengan berbagai bahasa pemrograman:</p>
+    <ul style="list-style: none; padding: 0;">
+      <li>• Lua</li>
+      <li>• JavaScript</li>
+      <li>• Python</li>
+      <li>• HTML</li>
+    </ul>
+    <p>Hubungi Yongky untuk kerja sama atau pemesanan script custom!</p>
+    <a class="whatsapp-link" href="https://wa.me/6282229549563" target="_blank">Chat di WhatsApp</a>
+  </div>
+
+  <footer>© 2025 Yongky</footer>
+
+  <script>
+    function showContent() {
+      document.getElementById('continueBtn').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    }
+  </script>
+</body>
+  </html>
